@@ -65,6 +65,17 @@ namespace PipelineProject.Controller
 
             return NoContent();
         }
+
+        [HttpGet("ping")]
+        public IActionResult PingTest()
+        {
+            return Ok(new 
+            { 
+                Message = "CI/CD Pipeline Başarıyla Çalışıyor!", 
+                Version = "v1.0.0",
+                Time = DateTime.UtcNow 
+            });
+        }
     
     }
 }
