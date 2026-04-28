@@ -1,0 +1,64 @@
+name: .NET CI/CD Pipeline
+
+# a) push veya pull_request eventleri tetikler
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # b) Build the application (jar/dll karşılığı)
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build and Publish
+      run: dotnet publish -c Release -o ./publish
+
+    # c) Build a containerized image & Push to DockerHub
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ secrets.DOCKER_USERNAME }}/pipeline-project:latest
+
+    # d) Deploy to Cloud (Run compose.yml)
+    - name: Copy compose.yml to Server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        source: "compose.yml"
+        target: "/home/${{ secrets.SERVER_USER }}/app"
+
+    - name: SSH into Server and Deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        script: |
+          cd /home/${{ secrets.SERVER_USER }}/app
+          docker pull ${{ secrets.DOCKER_USERNAME }}/pipeline-project:latest
+          docker compose down
+          docker compose up -d

@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  webapi:
+    image: gokdenizbyk/pipeline-project:latest
+    container_name: pipeline_api
+    restart: always
+    ports:
+      - "80:8080" 
