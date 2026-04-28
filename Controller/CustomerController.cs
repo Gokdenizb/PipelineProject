@@ -72,7 +72,7 @@ namespace PipelineProject.Controller
             return Ok(new 
             { 
                 Message = "CI/CD Pipeline Başarıyla Çalışıyor!", 
-                Version = "v1.0.0",
+                Version = "v1.0.1",
                 Time = DateTime.UtcNow 
             });
         }
